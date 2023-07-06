@@ -23,9 +23,7 @@ function FaceRecognizer(props) {
     try {
       const options = {
         quality: 1,
-        //mirrorImage: true,
-        // skipProcessing: true,
-        // mirrorImage: true,
+        mirrorImage: true,
       };
       const data = await takePicture(options);
       console.log(data.uri);
@@ -63,11 +61,7 @@ function FaceRecognizer(props) {
               //yawAngle: faces[0].yawAngle - faces[0].yawAngle,
               //rollAngle: faces[0].rollAngle + faces[0].rollAngle,
             },
-            //rightEyePosition: faces[0].rightEyePosition,
-            //leftEyePosition: faces[0].leftEyePosition,
-            //bottomMounthPosition: faces[0].bottomMounthPosition,
           });
-          //captureHandle();
         }
       } else {
         setBox({
@@ -151,7 +145,6 @@ function FaceRecognizer(props) {
         disabled={disabled}
         onPressIcon={() => {
           setImgUri('');
-          //UrgeWithPleasureComponent();
           captureHandle();
         }}
       />
