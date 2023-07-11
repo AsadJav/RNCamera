@@ -1,12 +1,19 @@
 import React, {useCallback, useState} from 'react';
-import {StyleSheet, Text, View, Image, TouchableOpacity} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
 import {COLORS} from '../utils/COLORS';
 import AppIcon from './AppIcon';
 import {launchCamera} from 'react-native-image-picker';
 import {RNCamera} from 'react-native-camera';
 import {useCamera} from 'react-native-camera-hooks';
 import {CameraRoll} from '@react-native-camera-roll/camera-roll';
-import CountDown from 'react-native-countdown-component';
+import axios from 'axios';
 
 function FaceRecognizer(props) {
   const [{cameraRef}, {takePicture}] = useCamera(null);
@@ -14,20 +21,51 @@ function FaceRecognizer(props) {
   const [box, setBox] = useState(null);
   const [detected, setDetected] = useState(false);
   const [disabled, setDisabled] = useState(true);
+  const [id, setId] = useState('');
+  const [obj, setObj] = useState([{code: '', image_url: ''}]);
+  const baseUrl = 'http://192.168.1.22:5000/compare';
 
-  // setTimeout(() => {
-  //   console.log('10 sec.');
-  // }, 10000);
+  const fetchData = async () => {
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        //'Access-Control-Allow-Origin': '*',
+      };
+      //console.log('Hiop');
+      //console.log('OBJ', obj);
+      await axios.post('http://192.168.1.44:5000/store', obj).then(response => {
+        console.log('YES');
+      });
+      console.log('OKO');
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const captureHandle = async () => {
     try {
       const options = {
-        quality: 1,
-        mirrorImage: true,
+        quality: 0.1,
+        //mirrorImage: true,
+        height: 1100,
+        width: 1350,
+        base64: true,
       };
       const data = await takePicture(options);
-      console.log(data.uri);
+
+      obj[0].code = id;
+      //obj.image = data.base64;
+      //console.log("EXIF",data.exif)
+      //console.log("PO",data.pictureOrientation)
+      let imgType = 'data:image/jpeg;base64,';
+      obj[0].image_url = imgType.concat(data.base64);
+      //obj.image_url = data.uri;
+      //console.log('IMG', img);
       setImgUri(data.uri);
+      //console.log(obj.code);
+      //console.log(obj.image);
+      fetchData();
+      //console.log(obj, obj.code);
       CameraRoll.save(data.uri);
     } catch (e) {
       console.log(e);
@@ -45,31 +83,39 @@ function FaceRecognizer(props) {
   const handleDetector = ({faces}) => {
     setDetected(true);
     if (faces[0]) {
-      //console.log(faces[0].bounds);
-      if (faces[0].bounds.origin.x > 50 && faces[0].bounds.origin.x < 120) {
-        if (faces[0].bounds.origin.y > 110 && faces[0].bounds.origin.y < 190) {
-          setDisabled(false);
-          setBox({
-            boxs: {
-              width: 170,
-              height: 200,
-              //width: faces[0].bounds.size.width + 20,
-              //height: faces[0].bounds.size.height + 30,
-              x: 60,
-              y: 80,
-              color: 'green',
-              //yawAngle: faces[0].yawAngle - faces[0].yawAngle,
-              //rollAngle: faces[0].rollAngle + faces[0].rollAngle,
-            },
-          });
-        }
+      //console.log(faces[0].bottomMouthPosition);
+      if (
+        faces[0].bounds.origin.x > 60 &&
+        faces[0].bounds.origin.x < 110 &&
+        faces[0].bottomMouthPosition.y > 190 &&
+        faces[0].bottomMouthPosition.y < 270
+      ) {
+        // if (
+        //   faces[0].bottomMouthPosition.y > 190 &&
+        //   faces[0].bottomMouthPosition.y < 270
+        // ) {
+        setDisabled(false);
+        setBox({
+          boxs: {
+            // width: 150,
+            // height: 180,
+            //width: faces[0].bounds.size.width + 20,
+            //height: faces[0].bounds.size.height + 30,
+            x: 70,
+            y: 100,
+            color: 'green',
+            //yawAngle: faces[0].yawAngle - faces[0].yawAngle,
+            //rollAngle: faces[0].rollAngle + faces[0].rollAngle,
+          },
+        });
+        //}
       } else {
         setBox({
           boxs: {
-            width: 170,
-            height: 200,
-            x: 60,
-            y: 80,
+            // width: 150,
+            // height: 180,
+            x: 70,
+            y: 100,
             color: 'red',
           },
         });
@@ -78,10 +124,10 @@ function FaceRecognizer(props) {
     } else {
       setBox({
         boxs: {
-          width: 170,
-          height: 200,
-          x: 60,
-          y: 80,
+          // width: 150,
+          // height: 180,
+          x: 70,
+          y: 100,
           color: 'red',
         },
       });
@@ -91,6 +137,13 @@ function FaceRecognizer(props) {
   return (
     <View style={styles.container}>
       <Text style={styles.txt}>Student Attendence System</Text>
+      <TextInput
+        placeholder="Your ID:"
+        style={styles.ti}
+        onChangeText={setId}
+        value={id}
+        caretHidden={true}
+      />
       <View style={styles.outerView}>
         {!imgUri && (
           <RNCamera
@@ -115,8 +168,8 @@ function FaceRecognizer(props) {
                 //   captureHandle();
                 // }}
                 style={styles.bound({
-                  width: box.boxs.width,
-                  height: box.boxs.height,
+                  // width: box.boxs.width,
+                  // height: box.boxs.height,
                   x: box.boxs.x,
                   y: box.boxs.y,
                   color: box.boxs.color,
@@ -144,7 +197,10 @@ function FaceRecognizer(props) {
         IconColor={COLORS.white}
         disabled={disabled}
         onPressIcon={() => {
-          setImgUri('');
+          if (imgUri != '') {
+            setImgUri('');
+            setId('');
+          }
           captureHandle();
         }}
       />
@@ -179,15 +235,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   img: {width: '100%', height: '100%'},
-  bound: ({width, height, x, y, color}) => {
+  bound: ({x, y, color}) => {
     return {
       justifyContent: 'center',
       alignItems: 'center',
       position: 'absolute',
       top: y,
       left: x + 10,
-      width,
-      height,
+      width: 150,
+      height: 180,
       borderWidth: 5,
       borderColor: color,
       zIndex: 3000,
@@ -195,6 +251,7 @@ const styles = StyleSheet.create({
       backgroundColor: 'transparent',
     };
   },
+  ti: {borderBottomWidth: 1, width: '90%', marginBottom: 20},
 });
 
 export default FaceRecognizer;
